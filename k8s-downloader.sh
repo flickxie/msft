@@ -4,6 +4,7 @@
 
 # VERSION=v1.21.5
 VERSION=$1
+DIR=k8s-${VERSION}
 # conformance
 # kube-apiserver
 # kube-proxy
@@ -15,15 +16,21 @@ if [[ $# == 0 ]] || [[ "$1" == "-h" ]]; then
     exit 1
 fi
 
-mkdir k8s-${VERSION}
+mkdir -p ${DIR}/bin ${DIR}/dockerimage
 for i in conformance kube-apiserver kube-proxy kube-controller-manager kube-scheduler
     do
         docker pull registry.k8s.io/${i}:${VERSION}
-        docker save registry.k8s.io/${i}:${VERSION} > k8s-${VERSION}/$i-${VERSION}.tar
+        docker save registry.k8s.io/${i}:${VERSION} > ${DIR}/dockerimage/$i-${VERSION}.tar
 done
-tar -czf k8s-${VERSION}.tgz k8s-${VERSION}
+
+for i in apiextensions-apiserver kube-aggregator kube-apiserver kube-controller-manager kube-log-runner kube-proxy kube-scheduler kubeadm kubectl kubectl-convert kubelet mounter
+    do
+        wget -P ${DIR}/bin/ https://dl.k8s.io/${VERSION}/bin/linux/amd64/${i}
+done
+
+tar -czf ${DIR}.tgz ${DIR}
 for i in conformance kube-apiserver kube-proxy kube-controller-manager kube-scheduler
     do
         docker rmi registry.k8s.io/${i}:${VERSION}
 done
-rm -rf ./k8s-${VERSION}/
+rm -rf ./${DIR}/
